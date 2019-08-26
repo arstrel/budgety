@@ -160,7 +160,38 @@ const UIController = (() => {
     percentageLabel: '.budget__expenses--percentage',
     container: '.container',
     expensesPercLabel: '.item__percentage',
+    dateLabel: '.budget__title--month'
   };
+
+  const formatNumber = (num, type) => {
+    let int, dec, sign;
+    //+ or - before the number 
+    // 2 decimal points
+    //comma separating the thousands
+    // 2310.5340 => + 2,310.53
+    // 2000 => + 2,000.00
+
+    num = Math.abs(num);
+    num = num.toFixed(2);
+    [int, dec] = num.split('.');
+
+    if(int.length > 3) {
+      // 23510 => 23,510 
+      int = int.substr(0, int.length - 3) + ',' + int.substr(int.length - 3, int.length); 
+    }
+    console.log(type);
+    if(type === 'exp') {
+      sign = '-'
+    } else if (type === 'inc') {
+      sign = '+'
+    } else {
+      sign = ''
+    }
+
+    return `${sign}  ${int}.${dec}`
+  }
+
+   
 
   return {
     getInput: () => {
@@ -207,7 +238,7 @@ const UIController = (() => {
       //replace the placeholder with actual data that we receive from the object
       newHtml = html.replace("%id%", obj.id);
       newHtml = newHtml.replace("%description%", obj.description);
-      newHtml = newHtml.replace("%value%", obj.value);
+      newHtml = newHtml.replace("%value%", formatNumber(obj.value, type));
 
       //insert html into the DOM
       document.querySelector(element).insertAdjacentHTML("beforeend", newHtml);
@@ -232,9 +263,16 @@ const UIController = (() => {
     },
 
     displayBudget: (obj) => {
-      document.querySelector(DOMStrings.budgetLabel).textContent = obj.budget;
-      document.querySelector(DOMStrings.incomeLabel).textContent = obj.totalInc;
-      document.querySelector(DOMStrings.expensesLabel).textContent = obj.totalExp;
+      let type;
+      if(obj.budget !== 0) {
+        obj.budget > 0 ? type = 'inc' : type = 'exp'
+      } else {
+        type = 'balanced'
+      }
+
+      document.querySelector(DOMStrings.budgetLabel).textContent = formatNumber(obj.budget, type);
+      document.querySelector(DOMStrings.incomeLabel).textContent = formatNumber(obj.totalInc, 'inc');
+      document.querySelector(DOMStrings.expensesLabel).textContent = formatNumber(obj.totalExp, 'exp');
       if(obj.percentage > 0) {
         document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage + '%';
       } else {
@@ -267,7 +305,17 @@ const UIController = (() => {
     deleteListItem: (selectorId) => {
       const element = document.getElementById(selectorId);
       element.parentNode.removeChild(element);
+    },
+
+    displayMonth:() => {
+      
+      let now = new Date();
+  
+      month = now.toLocaleString('default', { month: 'long' });
+      document.querySelector(DOMStrings.dateLabel).textContent = month;
+      
     }
+    
   };
 })();
 
@@ -355,6 +403,7 @@ const controller = ((budgetCtrl, UICtrl) => {
   return {
     init: () => {
       console.log("App ready to go.");
+      UICtrl.displayMonth();
       UICtrl.displayBudget({
         budget: 0,
         totalInc: 0,
