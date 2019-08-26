@@ -160,7 +160,8 @@ const UIController = (() => {
     percentageLabel: '.budget__expenses--percentage',
     container: '.container',
     expensesPercLabel: '.item__percentage',
-    dateLabel: '.budget__title--month'
+    dateLabel: '.budget__title--month',
+    inputType: '.add__type'
   };
 
   const formatNumber = (num, type) => {
@@ -179,7 +180,6 @@ const UIController = (() => {
       // 23510 => 23,510 
       int = int.substr(0, int.length - 3) + ',' + int.substr(int.length - 3, int.length); 
     }
-    console.log(type);
     if(type === 'exp') {
       sign = '-'
     } else if (type === 'inc') {
@@ -314,6 +314,19 @@ const UIController = (() => {
       month = now.toLocaleString('default', { month: 'long' });
       document.querySelector(DOMStrings.dateLabel).textContent = month;
       
+    },
+
+    changeType: () => {
+      let fields = document.querySelectorAll(
+        `${DOMStrings.inputType},
+        ${DOMStrings.inputDescription},
+        ${DOMStrings.inputValue}`
+        );
+      document.querySelector(DOMStrings.inputBtn).classList.toggle('red');
+
+      fields.forEach(field => {
+        field.classList.toggle('red-focus')
+      })
     }
     
   };
@@ -398,6 +411,8 @@ const controller = ((budgetCtrl, UICtrl) => {
     });
 
     document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
+
+    document.querySelector(DOM.inputType).addEventListener('change', UICtrl.changeType);
   };
 
   return {
