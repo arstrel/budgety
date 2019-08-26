@@ -1,13 +1,19 @@
 //Budget controller
 const budgetController = (() => {
   const Income = function(id, description, value) {
-    (this.id = id), (this.description = description), (this.value = value);
+    this.id = id
+    this.description = description
+    this.value = value;
   };
 
-  //instead if classic coonstructor look we also can use object destructure
+  //instead of classic coonstructor object destructuring can be used
   //return {id, description, value}
+  //but in this case the result would be just object,
+  //not identified as of a class Income or Expense
   const Expense = function(id, description, value) {
-    return { id, description, value };
+    this.id = id
+    this.description = description
+    this.value = value;
   };
 
   const calcTotal = (type) => {
@@ -76,6 +82,27 @@ const budgetController = (() => {
         totalExp: data.totals.exp,
         percentage: data.percentage
       }
+    },
+
+    deleteItem: (type, id) => {
+      /*
+      also may use .map to figure out index of the el with necessary id
+      and then delete it with the splice
+
+      let ids = data.allItems[type].map(curr => {
+        return curr.id
+      }
+
+      let index = ids.indexOf(id)
+      index !== -1 && data.allItems[type].splice(index, 1)
+      */
+
+
+      data.allItems[type] = data.allItems[type].filter(el => {
+        //we are actually comparing number to a string here but it works thanks to a coersion 
+        return el.id != id
+      })
+     
     }
   };
 })();
@@ -93,6 +120,7 @@ const UIController = (() => {
     incomeLabel: '.budget__income--value',
     expensesLabel: '.budget__expenses--value',
     percentageLabel: '.budget__expenses--percentage',
+    container: '.container',
   };
 
   return {
@@ -114,7 +142,7 @@ const UIController = (() => {
       let html, newHtml, element;
       if (type === "inc") {
         element = DOMStrings.incomeContainer;
-        html = `<div class="item clearfix" id="income-%id%">
+        html = `<div class="item clearfix" id="inc-%id%">
             <div class="item__description">%description%</div>
               <div class="right clearfix">
                   <div class="item__value">%value%</div>
@@ -125,7 +153,7 @@ const UIController = (() => {
           </div>`;
       } else if (type === "exp") {
         element = DOMStrings.expenseContainer;
-        html = ` <div class="item clearfix" id="expense-%id%">
+        html = ` <div class="item clearfix" id="exp-%id%">
             <div class="item__description">%description%</div>
             <div class="right clearfix">
                 <div class="item__value">%value%</div>
@@ -173,6 +201,11 @@ const UIController = (() => {
       } else {
         document.querySelector(DOMStrings.percentageLabel).textContent = '---';
       }
+    },
+
+    deleteListItem: (selectorId) => {
+      const element = document.getElementById(selectorId);
+      element.parentNode.removeChild(element);
     }
   };
 })();
@@ -212,6 +245,24 @@ const controller = ((budgetCtrl, UICtrl) => {
     } 
   };
 
+  const ctrlDeleteItem = (e) => {
+    let itemId = e.target.parentNode.parentNode.parentNode.parentNode.id;
+    if(itemId) {
+      //looks like inc-2 or exp-0
+      //using destructuring to get type and id
+      let [type, id] = itemId.split('-');
+
+      // delete the item from data
+      budgetCtrl.deleteItem(type, id)
+      //delete from the UI
+      UICtrl.deleteListItem(itemId)
+
+      //update and show new budget
+      updateBudget();
+    }
+
+  }
+
   const setupEventListeners = () => {
     const DOM = UIController.getDOMStrings();
 
@@ -221,6 +272,8 @@ const controller = ((budgetCtrl, UICtrl) => {
       //if enter key clicked
       e.keyCode === 13 && ctrlAddItem();
     });
+
+    document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
   };
 
   return {
