@@ -10,11 +10,25 @@ const budgetController = (() => {
   //return {id, description, value}
   //but in this case the result would be just object,
   //not identified as of a class Income or Expense
+  //and prototype will not work then
   const Expense = function(id, description, value) {
     this.id = id
     this.description = description
     this.value = value;
+    this.percentage = -1;
   };
+
+  Expense.prototype.calcPercentage = function(totalIncome){
+    if(totalIncome > 0) {
+      this.percentage = Math.round((this.value / totalIncome) * 100);
+    } else {
+      this.percentage = -1;
+    }
+  };
+
+  Expense.prototype.getPercentage = function () {
+    return this.percentage;
+  }
 
   const calcTotal = (type) => {
     let sum = 0;
@@ -75,6 +89,30 @@ const budgetController = (() => {
         data.percentage = -1;
       }
     },
+
+    calculatePercentages: () => {
+
+      /*
+      a=20
+      b=10
+      c=40
+      income=100
+      a=20/100=20%
+      */  
+
+      data.allItems.exp.forEach(el => {
+        el.calcPercentage(data.totals.inc);
+      });
+
+    },
+
+    getPercentages: () => {
+      let allPerc = data.allItems.exp.map(curr => {
+        return curr.getPercentage();
+      })
+      return allPerc
+    },
+
     getBudget: () => {
       return {
         budget: data.budget,
@@ -121,6 +159,7 @@ const UIController = (() => {
     expensesLabel: '.budget__expenses--value',
     percentageLabel: '.budget__expenses--percentage',
     container: '.container',
+    expensesPercLabel: '.item__percentage',
   };
 
   return {
@@ -203,6 +242,28 @@ const UIController = (() => {
       }
     },
 
+    displayPercentages: (percentages) => {
+      let fields = document.querySelectorAll(DOMStrings.expensesPercLabel);
+
+      //fields is NodeList but since recently NodeLists have forEach already
+      /*
+      nodeListForEach = function (list, callback) {
+        for(let i = 0; i < list.length; i++) {
+          callback(list[i], i);
+        }
+      }
+      */
+
+      fields.forEach((el, i) => {
+        if(percentages[i] > 0) {
+          el.textContent = percentages[i] + '%'
+        } else {
+          el.textContent = '---'
+        }
+      })
+
+    },
+
     deleteListItem: (selectorId) => {
       const element = document.getElementById(selectorId);
       element.parentNode.removeChild(element);
@@ -221,6 +282,15 @@ const controller = ((budgetCtrl, UICtrl) => {
     UICtrl.displayBudget(budget);
     
   };
+
+  const updatePercentages = () => {
+    //calc the persentages
+    budgetCtrl.calculatePercentages();
+    //read percentage from budgetCtrl
+    let percentages = budgetCtrl.getPercentages();
+    //update UI with new percentages
+    UICtrl.displayPercentages(percentages);
+  }
 
   const ctrlAddItem = () => {
     //get input field data
@@ -242,6 +312,9 @@ const controller = ((budgetCtrl, UICtrl) => {
         
         //calc and update budget
         updateBudget();
+
+        //update percentages
+        updatePercentages();
     } 
   };
 
@@ -259,6 +332,9 @@ const controller = ((budgetCtrl, UICtrl) => {
 
       //update and show new budget
       updateBudget();
+
+      //update percentages
+      updatePercentages();
     }
 
   }
